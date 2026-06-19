@@ -1,0 +1,9 @@
+tclean
+Copyright 2026 Tunix Studio
+
+This product includes software developed by Tunix Studio.
+
+Licensed under the Apache License, Version 2.0. See the LICENSE file.
+
+Built with Tauri (https://tauri.app), React, and Phosphor Icons, among other
+open-source dependencies, each under its own license.

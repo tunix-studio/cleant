@@ -1,0 +1,33 @@
+# Dependencies
+node_modules
+
+# Build output
+dist
+dist-ssr
+
+# Rust / Tauri
+src-tauri/target
+src-tauri/gen
+
+# Generated icon source
+src-tauri/icons/icon-1024.png
+
+# Editor / OS
+.DS_Store
+*.local
+.vscode/*
+!.vscode/extensions.json
+
+# Logs
+*.log
+
+# Secrets — never commit signing / notarization material
+.env
+.env.*
+!.env.example
+*.p12
+*.cer
+*.provisionprofile
+
+# Local agent tooling
+.claude/

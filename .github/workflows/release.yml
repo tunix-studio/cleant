@@ -1,0 +1,72 @@
+# Optional CI path for a signed + notarized UNIVERSAL .dmg (Intel + Apple Silicon).
+#
+# MANUAL ONLY: run it from the Actions tab (workflow_dispatch) and pass an existing
+# tag. Day-to-day releases are cut locally (pnpm tauri build + notarize + gh release),
+# so this does NOT auto-run on tag push.
+#
+# To use it, first add these repository Secrets (Settings → Secrets and variables → Actions):
+#   APPLE_CERTIFICATE            base64 of your "Developer ID Application" .p12
+#   APPLE_CERTIFICATE_PASSWORD   password for that .p12
+#   APPLE_SIGNING_IDENTITY       e.g. "Developer ID Application: Your Name (TEAMID)"
+#   APPLE_ID                     your Apple ID email
+#   APPLE_PASSWORD               an app-specific password for notarization
+#   APPLE_TEAM_ID                your 10-char Apple Developer Team ID
+# (GITHUB_TOKEN is provided automatically.)
+#
+# Without these secrets the codesign step fails — that's why it stays manual.
+
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to build & attach the release to (e.g. v0.1.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - run: pnpm install
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        with:
+          tagName: ${{ inputs.tag }}
+          releaseName: "tclean ${{ inputs.tag }}"
+          releaseBody: "See the CHANGELOG for what's new. Download the .dmg below."
+          releaseDraft: true
+          prerelease: false
+          args: --target universal-apple-darwin
